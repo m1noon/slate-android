@@ -1,4 +1,4 @@
-package github.m1noon.slateandroid
+package github.m1noon.slateandroid.sample
 
 import org.junit.Test
 

@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
 android {
     compileSdkVersion 29
 
@@ -21,7 +22,24 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
+    dataBinding {
+        enabled = true
+    }
+    testOptions {
+        unitTests {
+            // By default, local unit tests throw an exception any time the code you are testing tries to access
+            // Android platform APIs (unless you mock Android dependencies yourself or with a testing
+            // framework like Mockito). However, you can enable the following property so that the test
+            // returns either null or zero when accessing platform APIs, rather than throwing an exception.
+            returnDefaultValues true
+            // Encapsulates options for controlling how Gradle executes local unit tests. For a list
+            // of all the options you can specify, read Gradle's reference documentation.
+            all {
+                // Sets JVM argument(s) for the test JVM(s).
+                jvmArgs '-XX:MaxPermSize=256m'
+            }
+        }
+    }
 }
 
 dependencies {
@@ -29,6 +47,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.core:core-ktx:1.1.0'
+    kapt "com.android.databinding:compiler:$android_plugin_version"
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'

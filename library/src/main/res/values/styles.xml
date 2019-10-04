@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="TextAppearance.SlateAndroid.Heading1" parent="android:TextAppearance.DeviceDefault">
+        <item name="android:textSize">@dimen/sa_heading_1_text_size</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>

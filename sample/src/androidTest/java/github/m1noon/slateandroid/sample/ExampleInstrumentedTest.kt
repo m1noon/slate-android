@@ -1,4 +1,4 @@
-package github.m1noon.slateandroid
+package github.m1noon.slateandroid.sample
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
