@@ -435,6 +435,21 @@ interface Node {
     }
 
     /**
+     * Get the next sibling of a node by [path].
+     */
+    fun getNextSibling(path: List<Int>): Node? {
+        val iter = siblings(path, Direction.FORWARD).iterator()
+        if (iter.hasNext()) {
+            return iter.next()
+        }
+        return null
+    }
+
+    fun getNextSiblingByKey(key: String): Node? {
+        return getNextSibling(getPathByKey(key))
+    }
+
+    /**
      * Get the text node after a descendant text node by [path].
      */
     fun getNextText(path: List<Int>): Node? {
@@ -710,6 +725,39 @@ interface Node {
 
     fun getPreviousLeafBlockByKey(key: String): Node? {
         return getPreviousLeafBlock(getPathByKey(key))
+    }
+
+    fun mergeNodes(from: List<Int>, to: List<Int> = from.decrementPath()): Node {
+        val fromNode: Node = assertNodeByPath(from)
+        val toNode: Node = assertNodeByPath(to)
+
+        var newNode: Node? = null
+        if (fromNode is TextNode && toNode is TextNode) {
+            // if both node is text, merge 'text'
+            newNode = toNode.insertText(toNode.text.length, fromNode.text)
+        } else if (fromNode is BlockNode && toNode is BlockNode) {
+            // if both node is block, merge 'nodes'
+            newNode = toNode.updateNodes(toNode.nodes.plus(fromNode.nodes))
+        }
+
+        return newNode?.let { removeNode(from).removeNode(to).insertNode(to, it) } ?: this
+    }
+
+    /**
+     * Merge texts of [from] into [to].
+     * Default of [to] is previous node of [from].
+     */
+    fun mergeTexts(from: List<Int>, to: List<Int> = from.decrementPath()): Node {
+        val fromNode: Node = assertNodeByPath(from)
+        val toNode: Node = assertNodeByPath(to)
+
+        return if (toNode is TextNode && fromNode is TextNode) {
+            toNode.insertText(toNode.text.length, fromNode.text).let { newNode ->
+                removeNode(from)
+                    .removeNode(to)
+                    .insertNode(to, newNode)
+            }
+        } else this
     }
 
     /**

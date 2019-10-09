@@ -3,11 +3,16 @@ package github.m1noon.slateandroid.controllers
 import android.util.Log
 import github.m1noon.slateandroid.commands.Command
 import github.m1noon.slateandroid.commands.FunctionCommand
+import github.m1noon.slateandroid.models.Node
+import github.m1noon.slateandroid.models.ObjectType
 import github.m1noon.slateandroid.models.Value
 import github.m1noon.slateandroid.operations.Operation
 import github.m1noon.slateandroid.operations.Operator
+import github.m1noon.slateandroid.plugins.schema.SchemaRule
+import github.m1noon.slateandroid.plugins.schema.schemaRuleDefault
 import github.m1noon.slateandroid.utils.getAncestorPathsWithMe
 import github.m1noon.slateandroid.utils.transform
+import java.lang.RuntimeException
 
 
 interface IController {
@@ -16,7 +21,7 @@ interface IController {
     fun flush(): IController
     fun normalize(): IController
     fun getValue(): Value
-    fun setValue(value: Value): IController
+    fun setValue(value: Value, forceNormalize: Boolean? = null): IController
     fun updateValue(fn: (Value) -> Value): IController
     fun withoutNormalizing(fn: (IController) -> Unit): IController
 }
@@ -29,6 +34,7 @@ private class Controller(
     val onChange: (IController, Value, List<Operation>) -> Unit,
     var _value: Value = Value(),
     val operator: Operator = Operator(),
+    val schemaRule: SchemaRule = schemaRuleDefault,
     val readOnly: Boolean = false
 ) : IController {
 
@@ -111,6 +117,9 @@ private class Controller(
         val table = value.document.getKeysToPathTable()
         val paths = table.values
         this.tmp = this.tmp.copy(dirty = this.tmp.dirty.plus(paths))
+
+        normalizeDirtyPaths()
+
         return this
     }
 
@@ -118,9 +127,15 @@ private class Controller(
         return _value
     }
 
-    override fun setValue(value: Value): IController {
+    override fun setValue(value: Value, forceNormalize: Boolean?): IController {
+        val normalize: Boolean = forceNormalize ?: this._value != value
         this._value = value
-        // TODO normalize
+
+        // normalize
+        if (normalize) {
+            this.normalize()
+        }
+
         return this
     }
 
@@ -177,7 +192,39 @@ private class Controller(
         }
     }
 
-    fun normalizeNodeByPath(path: List<Int>) {
-        // TODO
+    fun normalizeNodeByPath(givenPath: List<Int>) {
+        var path = givenPath
+        val value = getValue()
+        var node: Node? = value.document.assertNodeByPath(path)
+        var iterations = 0
+        val max = 100 + if (node?.objectType == ObjectType.Text) 1 else node?.nodes.orEmpty().size
+
+        while (node != null) {
+            // TODO plugin
+            val normalizer = schemaRule.normalizeNode(node, this) ?: break
+
+            normalizer()
+
+            val newValue = getValue()
+            val key = node.key
+            val newNode = newValue.document.getDescendantByPath(path)
+
+            if (newNode != null && newNode.key == key) {
+                node = newNode
+            } else {
+                val newNodeByKey = newValue.document.getNodeByKey(key)
+                if (newNodeByKey != null) {
+                    node = newNodeByKey
+                    path = value.document.getPathByKey(key)
+                } else {
+                    break
+                }
+            }
+
+            iterations++
+            if (iterations > max) {
+                throw RuntimeException("A schema rule could not be normalized after sufficient iterations. This is usually due to a `rule.normalize` or `plugin.normalizeNode` function of a schema being incorrectly written, causing an infinite loop.")
+            }
+        }
     }
 }

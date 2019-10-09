@@ -207,11 +207,12 @@ data class Value(
     }
 
     fun mergeNode(from: List<Int>, to: List<Int>): Value {
-        // find last text node in 'to' block to which set selection.
+
+        // find last text node in 'to' block to which set selection. FIXME
         val lastTextNodeOfTo = document.getNodeByPath(to)?.getLastText()
 
         return copy(
-            document = document.mergeBlocks(from, to) as Document
+            document = document.mergeNodes(from, to) as Document
         ).let { v ->
             lastTextNodeOfTo?.let { tn ->
                 v.mapPoints {

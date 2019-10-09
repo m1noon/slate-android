@@ -4,12 +4,15 @@ import android.content.Context
 import android.text.Editable
 import android.text.Html
 import android.text.TextWatcher
+import android.text.style.StyleSpan
 import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
+import androidx.core.text.toSpannable
+import androidx.core.text.toSpanned
 import github.m1noon.slateandroid.commands.*
 import github.m1noon.slateandroid.controllers.IController
 import github.m1noon.slateandroid.databinding.TextBlockBinding

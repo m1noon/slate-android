@@ -33,10 +33,36 @@ open class EditorCore : LinearLayout {
         val updateSelection: Boolean = ops.firstOrNull { it.updateSelection } != null
 
         // render components
+        renderValue(c, v, updateSelection)
+    }
+
+    fun getValue(): Value {
+        return controller.getValue()
+    }
+
+    fun applyOperation(operation: Operation) {
+        controller.applyOperation(operation)
+    }
+
+    fun updateValue(value: Value) {
+        controller.setValue(value)
+        invalidate(controller.getValue())
+    }
+
+    private fun invalidate(value: Value) {
+        if (childCount > 0) {
+            removeAllViews()
+        }
+        renderValue(controller, value, true)
+    }
+
+    private fun renderValue(c: IController, v: Value, updateSelection: Boolean = false) {
+        // render components
         val components = renderer.render(c, v.document)
         components.forEachIndexed { index, component ->
             val view = component.view()
 
+            // add view to layout
             val layoutedIndex = indexOfChild(view)
             if (layoutedIndex == -1) {
                 addView(view, index)
@@ -50,32 +76,11 @@ open class EditorCore : LinearLayout {
                 component.syncSelection()
             }
         }
+
+        // remove legacy views
         if (childCount > components.size) {
             removeViews(components.size, childCount - components.size)
         }
-
-        // update selection
-    }
-
-    fun getValue(): Value {
-        return controller.getValue()
-    }
-
-    fun applyOperation(operation: Operation) {
-        controller.applyOperation(operation)
-    }
-
-    fun updateValue(value: Value) {
-        controller.setValue(value)
-        invalidate(value)
-    }
-
-    private fun invalidate(value: Value) {
-        if (childCount > 0) {
-            removeAllViews()
-        }
-        renderer.render(controller, value.document)
-            .forEach { addView(it.view()) }
     }
 
     private fun logNode(n: Node, prefix: String = "") {
