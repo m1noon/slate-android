@@ -1,14 +1,10 @@
 package github.m1noon.slateandroid
 
 import android.content.Context
-import android.text.Html
 import android.util.AttributeSet
 import android.util.Log
-import android.view.MotionEvent
-import android.view.View
-import android.widget.EditText
 import android.widget.LinearLayout
-import androidx.core.view.children
+import github.m1noon.slateandroid.commands.Command
 import github.m1noon.slateandroid.components.*
 import github.m1noon.slateandroid.controllers.IController
 import github.m1noon.slateandroid.controllers.NewController
@@ -31,13 +27,18 @@ open class EditorCore : LinearLayout {
         Log.d(TAG, "OnValueChanged: ${ops}")
         logNode(v.document)
         val updateSelection: Boolean = ops.firstOrNull { it.updateSelection } != null
+        val updateText: Boolean = ops.firstOrNull { it.updateText } != null
 
         // render components
-        renderValue(c, v, updateSelection)
+        renderValue(c, v, updateSelection, updateText)
     }
 
     fun getValue(): Value {
         return controller.getValue()
+    }
+
+    fun command(c: Command) {
+        controller.command(c)
     }
 
     fun applyOperation(operation: Operation) {
@@ -56,9 +57,14 @@ open class EditorCore : LinearLayout {
         renderValue(controller, value, true)
     }
 
-    private fun renderValue(c: IController, v: Value, updateSelection: Boolean = false) {
+    private fun renderValue(
+        c: IController,
+        v: Value,
+        updateSelection: Boolean = false,
+        updateText: Boolean = false
+    ) {
         // render components
-        val components = renderer.render(c, v.document)
+        val components = renderer.render(c, v.document, updateText)
         components.forEachIndexed { index, component ->
             val view = component.view()
 
@@ -84,7 +90,10 @@ open class EditorCore : LinearLayout {
     }
 
     private fun logNode(n: Node, prefix: String = "") {
-        Log.d(TAG, "[onValueChanged] ${prefix} ${n.objectType}/${n.type} '${n.text}'")
+        Log.d(
+            TAG,
+            "[onValueChanged] ${prefix} ${n.objectType}/${n.type} '${n.text}' 'marks[${n.marks}]'"
+        )
         for (child in n.nodes.orEmpty()) {
             logNode(child, "${prefix}--")
         }

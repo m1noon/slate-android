@@ -35,7 +35,7 @@ class Renderer(
         return list.toList()
     }
 
-    fun render(controller: IController, document: Document): List<Component> {
+    fun render(controller: IController, document: Document, forceUpdateText: Boolean): List<Component> {
 
         return document.nodes.map { it as BlockNode }.flatMap { it.getBlockRenderingData() }
             .map { data ->
@@ -47,6 +47,7 @@ class Renderer(
                             controller,
                             data,
                             renderInlineOrTextNodes(data.nodes),
+                            forceUpdateText,
                             it
                         ).let { leaf ->
                             // TODO bind block data to branch correctly

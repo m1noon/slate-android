@@ -5,11 +5,17 @@ import github.m1noon.slateandroid.models.Value
 class Operator {
     fun applyOperation(value: Value, operation: Operation): Value {
         return when (operation) {
+            is Operation.AddMark -> {
+                value.addMark(operation.path, operation.mark)
+            }
             is Operation.InsertNode -> {
                 value.insertNode(operation.path, operation.node)
             }
             is Operation.InsertText -> {
                 value.insertText(operation.path, operation.offset, operation.text)
+            }
+            is Operation.RemoveMark -> {
+                value.removeMark(operation.path, operation.mark)
             }
             is Operation.RemoveNode -> {
                 value.removeNode(operation.path)

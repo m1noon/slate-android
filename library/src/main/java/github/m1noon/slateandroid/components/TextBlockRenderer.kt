@@ -27,13 +27,14 @@ class TextBlockRenderer : BlockRenderer {
         controller: IController,
         data: BlockNode.BlockRenderingData,
         text: String,
+        forceUpdateText: Boolean,
         component: Component
     ): Component {
         if (component is TextBlockComponent) {
             return component.also { c ->
                 c.setSyncState(false)
                 c.bindBlockData(data)
-                c.bindText(text)
+                c.bindText(text, forceUpdateText)
                 getTextStyle(data.type)?.let {
                     c.applyTextAppearance(it)
                 }

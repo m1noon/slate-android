@@ -15,12 +15,16 @@
         <github.m1noon.slateandroid.Editor
             android:id="@+id/editor"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/space_16"
+            android:paddingEnd="@dimen/space_16" />
     </ScrollView>
 
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:elevation="12dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
@@ -28,17 +32,86 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <Button
+            <ImageView
                 android:id="@+id/btn_bold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Bold" />
+                android:layout_width="@dimen/editor_tool_btn_size"
+                android:layout_height="@dimen/editor_tool_btn_size"
+                android:layout_margin="@dimen/space_8"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_format_bold" />
 
-            <Button
-                android:id="@+id/btn_h1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="H1" />
+            <ImageView
+                android:id="@+id/btn_italic"
+                android:layout_width="@dimen/editor_tool_btn_size"
+                android:layout_height="@dimen/editor_tool_btn_size"
+                android:layout_margin="@dimen/space_8"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_format_italic" />
+
+            <ImageView
+                android:id="@+id/btn_size"
+                android:layout_width="@dimen/editor_tool_btn_size"
+                android:layout_height="@dimen/editor_tool_btn_size"
+                android:layout_margin="@dimen/space_8"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_format_size" />
+
+            <ImageView
+                android:id="@+id/btn_quote"
+                android:layout_width="@dimen/editor_tool_btn_size"
+                android:layout_height="@dimen/editor_tool_btn_size"
+                android:layout_margin="@dimen/space_8"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_format_quote" />
+
+            <ImageView
+                android:id="@+id/btn_list_bullet"
+                android:layout_width="@dimen/editor_tool_btn_size"
+                android:layout_height="@dimen/editor_tool_btn_size"
+                android:layout_margin="@dimen/space_8"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_format_list_bulleted" />
+
+            <ImageView
+                android:id="@+id/btn_list_numbered"
+                android:layout_width="@dimen/editor_tool_btn_size"
+                android:layout_height="@dimen/editor_tool_btn_size"
+                android:layout_margin="@dimen/space_8"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_format_list_numbered" />
+
+            <ImageView
+                android:id="@+id/btn_insert_link"
+                android:layout_width="@dimen/editor_tool_btn_size"
+                android:layout_height="@dimen/editor_tool_btn_size"
+                android:layout_margin="@dimen/space_8"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_insert_link" />
+
+            <ImageView
+                android:id="@+id/btn_insert_photo"
+                android:layout_width="@dimen/editor_tool_btn_size"
+                android:layout_height="@dimen/editor_tool_btn_size"
+                android:layout_margin="@dimen/space_8"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_insert_photo" />
+
         </LinearLayout>
     </HorizontalScrollView>
 

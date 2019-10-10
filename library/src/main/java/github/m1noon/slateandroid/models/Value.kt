@@ -88,7 +88,7 @@ data class Value(
                             TextNode(
                                 key = UUID.randomUUID().toString(),
                                 text = "456",
-                                marks = listOf(Mark(type = MarkType.STRONG))
+                                marks = listOf(Mark(type = MarkType.BOLD))
                             ),
                             TextNode(
                                 key = UUID.randomUUID().toString(),
@@ -98,6 +98,22 @@ data class Value(
                     )
                 )
             )
+        )
+    }
+
+    fun activeMarks(): Set<Mark> {
+        return if (selection.isUnset()) {
+            setOf()
+        } else if (selection.marks.isNotEmpty()) {
+            return selection.marks.toSet()
+        } else {
+            return document.getActiveMarksAtRange(selection)
+        }
+    }
+
+    fun addMark(path: List<Int>, mark: Mark): Value {
+        return copy(
+            document = document.addMark(path, mark) as Document
         )
     }
 
@@ -120,6 +136,15 @@ data class Value(
     fun insertText(path: List<Int>, offset: Int, text: String): Value {
         return copy(
             document = document.insertText(path, offset, text) as Document
+        )
+    }
+
+    /**
+     * Remove [mark] at [path].
+     */
+    fun removeMark(path: List<Int>, mark: Mark): Value {
+        return copy(
+            document = document.removeMark(path, mark) as Document
         )
     }
 
@@ -186,7 +211,7 @@ data class Value(
      * Set [selection] on the selection.
      */
     fun setSelection(selection: Selection): Value {
-        return copy(selection = selection)
+        return copy(selection = document.resolveSelection(selection))
     }
 
     fun splitNode(path: List<Int>, position: Int, property: NodeProperty?): Value {

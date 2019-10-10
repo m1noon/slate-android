@@ -22,12 +22,39 @@ data class TextNode(
         return this
     }
 
+    /**
+     * Add a [mark].
+     */
+    fun addMark(mark: Mark): TextNode {
+        return copy(
+            marks = marks.plus(mark)
+        )
+    }
+
+    /**
+     * Add a set of [marks].
+     */
+    fun addMarks(marks: List<Mark>): TextNode {
+        return copy(
+            marks = marks.plus(marks)
+        )
+    }
+
     fun insertText(index: Int, text: String): TextNode {
         return copy(
             text = "${this.text.substring(0, index)}${text}${this.text.substring(
                 index,
                 this.text.length
             )}"
+        )
+    }
+
+    /**
+     * Remove a [mark].
+     */
+    fun removeMark(mark: Mark): TextNode {
+        return copy(
+            marks = marks.filter { it.type != mark.type }
         )
     }
 

@@ -4,19 +4,17 @@ import android.content.Context
 import android.text.Editable
 import android.text.Html
 import android.text.TextWatcher
-import android.text.style.StyleSpan
 import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
-import androidx.core.text.toSpannable
-import androidx.core.text.toSpanned
 import github.m1noon.slateandroid.commands.*
 import github.m1noon.slateandroid.controllers.IController
 import github.m1noon.slateandroid.databinding.TextBlockBinding
 import github.m1noon.slateandroid.models.*
+import java.lang.Math.min
 import java.util.*
 
 class TextBlockComponent(
@@ -29,6 +27,7 @@ class TextBlockComponent(
 
     private val TAG = "TextBlockComponent"
     private val binding: TextBlockBinding
+    private var skippedText: String = ""
 
     init {
         binding = TextBlockBinding.inflate(LayoutInflater.from(context))
@@ -55,12 +54,21 @@ class TextBlockComponent(
         sync = start
     }
 
-    override fun bindText(text: String) {
+    override fun bindText(text: String, forceUpdate: Boolean) {
         val htmlText = Html.fromHtml(text)
         val current = binding.editText.text.toString()
-        if (htmlText.toString() != current) {
+        if (forceUpdate || htmlText.toString() != current) {
+            val length = htmlText.toString().length
+            val start = min(binding.editText.selectionStart, length)
+            val end = min(binding.editText.selectionEnd, length)
+            // bind text
             binding.editText.setText(htmlText)
-            syncSelection()
+            // restore selection
+            binding.editText.setSelection(start, end)
+//            syncSelection()
+            skippedText = ""
+        } else {
+            skippedText = text
         }
     }
 
@@ -93,6 +101,11 @@ class TextBlockComponent(
 
                 // update view selection state if all points found
                 if (anchorPoint != null && focusPoint != null) {
+                    if (binding.editText.text.length < focusPoint!!) {
+                        Log.w(TAG, "a selection point cannot be over the text length.")
+                        return
+                    }
+
                     binding.editText.requestFocus()
                     binding.editText.setSelection(anchorPoint!!, focusPoint!!)
                     val imm =
@@ -203,6 +216,16 @@ class TextBlockComponent(
 
         }
         return false
+    }
+
+    override fun onInputFixed(s: Editable?) {
+        // re-render when input fixed by previous skipped-text which is same as fixed text.
+        // 'bindText' will dispatch syncing to controller and it will make infinity loop, so stop sync before bind text.
+        if (skippedText.isNotEmpty() && sync) {
+            setSyncState(false)
+            bindText(skippedText, true)
+            setSyncState(true)
+        }
     }
 
     override fun onEditorAction(v: TextView?, actionId: Int, event: KeyEvent?): Boolean {

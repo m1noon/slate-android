@@ -88,6 +88,14 @@ interface Rangeable {
         return if (isBackward()) this.anchor else this.focus
     }
 
+    /**
+     * Normalize the range, relative to a `node`, ensuring that the anchor
+     * and focus nodes of the range always refer to leaf text nodes.
+     */
+    fun normalize(node: Node) : Rangeable {
+        return updatePoints { it.normalize(node) }
+    }
+
     // Setter
 
     fun <R : Rangeable> setStart(p: Point): R {

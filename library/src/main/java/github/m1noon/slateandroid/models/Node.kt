@@ -146,6 +146,15 @@ interface Node {
 
     // https://github.com/ianstormtaylor/slate/blob/master/packages/slate/src/interfaces/element.js
 
+
+    fun addMark(path: List<Int>, mark: Mark): Node {
+        val node = assertDescendantByPath(path)
+        if (node is TextNode) {
+            return replaceNode(path, node.addMark(mark))
+        }
+        return this
+    }
+
     /**
      * Create an [Iterable] for all of the ancestors of the [path].
      */
@@ -207,13 +216,17 @@ interface Node {
         includeTarget: Boolean = false,
         includeTargetAncestors: Boolean = false,
         includeText: Boolean = true,
+        range: Rangeable? = null,
         match: ((node: Node, path: List<Int>) -> Boolean)? = null
     ): Iterable<Node> {
         val root: Node = this
         val targetNode = getNodeByPath(targetPath)
-        var path: List<Int>? = targetPath
-        var node: Node? = getNodeByPath(targetPath)
+        var targetRange: Rangeable? = range
+        var path: List<Int>? = targetRange?.start()?.path ?: targetPath
+        var node: Node? = path?.let { getNodeByPath(it) }
         val visited: MutableSet<Node> = mutableSetOf()
+        val endPath: List<Int>? = targetRange?.end()?.path
+        var isEndRange: Boolean = false
 
         return object : Iterable<Node> {
             override fun iterator(): Iterator<Node> {
@@ -314,6 +327,13 @@ interface Node {
                             return calcNext(path, node)
                         }
 
+                        if (isEndRange) {
+                            return null
+                        }
+                        if (endPath != null && path == endPath) {
+                            isEndRange = true
+                        }
+
                         // skip document
                         if (!includeDocument && node.objectType == ObjectType.Document) {
                             return calcNext(path, node)
@@ -354,7 +374,9 @@ interface Node {
         includeBlocks: Boolean = true,
         includeInlines: Boolean = true,
         includeTarget: Boolean = false,
-        includeText: Boolean = true
+        includeText: Boolean = true,
+        range: Rangeable? = null,
+        direction: Direction = Direction.FORWARD
     ): Iterable<Node> {
         return this.createIterable(
             targetPath = targetPath,
@@ -365,8 +387,40 @@ interface Node {
             includeBlocks = includeBlocks,
             includeInlines = includeInlines,
             includeTarget = includeTarget,
-            includeText = includeText
+            includeText = includeText,
+            range = range,
+            direction = direction
         )
+    }
+
+    /**
+     * Get a set of the active marks in a `range`. Active marks are marks that are
+     * on every text node in a given range. This is a common distinction for
+     * highlighting toolbar buttons for example.
+     *
+     * TODO: this method needs to be cleaned up, it's very hard to follow and probably doing unnecessary work.
+     */
+    fun getActiveMarksAtRange(range: Rangeable): Set<Mark> {
+        // FIXME is it too simple? see 'slate-js' source code which has many operation.
+        val texts = getTextsAtRange(range)
+        return texts
+            .filter { tn ->
+                var include = true
+                if (tn.key == range.start().key) {
+                    include = range.start().offset ?: 0 < tn.text.orEmpty().length
+                }
+                if (tn.key == range.end().key) {
+                    include = range.end().offset ?: 0 > 0
+                }
+                include
+            }
+            .foldIndexed(setOf()) { index, acc, node ->
+                if (index == 0) {
+                    node.marks.orEmpty().toSet()
+                } else {
+                    acc.intersect(node.marks.orEmpty())
+                }
+            }
     }
 
     fun getClosestByKey(key: String, predicate: (Node) -> Boolean): Node? {
@@ -429,9 +483,71 @@ interface Node {
         return node
     }
 
-    fun assertDescendantByPath(path: List<Int>): Node? {
+    fun assertDescendantByPath(path: List<Int>): Node {
         return getDescendantByPath(path)
             ?: throw AssertionError("descendant node not found in path : {path='${path}'}")
+    }
+
+    /**
+     * Get a set of marks that would occur on the next insert at a [point] in the
+     * node. This mimics expected rich text editing behaviors of mark contiuation.
+     */
+    fun getInsertMarksAtPoint(point: Point): Set<Mark> {
+        // TODO resolve point
+
+        val offset = point.offset ?: 0
+        val textNode = getDescendantByPath(point.path)
+
+        // PERF: we can exit early if the offset isn't at the start of the node.
+        if (offset > 0) {
+            return textNode?.marks.orEmpty().toSet()
+        }
+
+        var blockNode: Node? = null
+        var blockPath: List<Int>? = null
+
+        for (node in ancestors(point.path)) {
+            if (node.objectType == ObjectType.Block) {
+                blockNode = node
+            }
+        }
+        blockNode?.let { blockPath = getPathByKey(it.key) }
+
+        // get prevous text node
+        val relativePath = point.path.drop(blockPath.orEmpty().size)
+        val previous = blockNode?.texts(
+            targetPath = relativePath,
+            direction = Direction.BACKWARD
+        )?.iterator()?.let {
+            if (it.hasNext()) it.next() else null
+        }
+
+        // If there's no previous text, we're at the start of the block, so use
+        // the current text nodes marks.
+        if (previous == null) {
+            return textNode?.marks.orEmpty().toSet()
+        }
+
+        // Otherwise, continue with the previous text node's marks instead.
+        return previous.marks.orEmpty().toSet()
+    }
+
+    /**
+     * Get a set of marks that would occur on the next insert at a [range].
+     * This mimics expected rich text editing behaviors of mark contiuation.
+     */
+    fun getInsertMarksAtRange(range: Rangeable): Set<Mark> {
+        // TODO resolve range
+
+        if (range.isUnset()) {
+            return setOf()
+        }
+
+        if (range.isCollapsed()) {
+            return getInsertMarksAtPoint(range.start())
+        }
+
+        return getDescendantByPath(range.start().path)?.marks.orEmpty().toSet()
     }
 
     /**
@@ -465,6 +581,30 @@ interface Node {
             return iter.next()
         }
         return null
+    }
+
+    /**
+     * Get the offset for a descendant text node by [path].
+     */
+    fun getOffset(path: List<Int>): Int {
+        assertDescendantByPath(path)
+        val index = path.firstOrNull() ?: return 0
+
+        val offset = this.nodes?.subList(0, index)?.fold(0) { acc, node ->
+            acc + node.text.orEmpty().length
+        } ?: 0
+
+        val ret = if (path.size == 1) {
+            offset
+        } else {
+            offset + (this.nodes?.getOrNull(index)?.getOffset(path.drop(1)) ?: 0)
+        }
+
+        return ret
+    }
+
+    fun getOffsetByKey(key: String): Int {
+        return getOffset(getPathByKey(key))
     }
 
     /**
@@ -539,9 +679,20 @@ interface Node {
         return null
     }
 
-    fun insertNodeByKey(key: String, node: Node): Node {
-        val path = getPathByKey(key)
-        return insertNode(path, node)
+    /**
+     * Recursively get all of the child text nodes in order of appearance.
+     */
+    fun getTexts(): List<Node> {
+        val iterable = texts()
+        return iterable.toList()
+    }
+
+    /**
+     * Get all of the text nodes in a [range] as a List.
+     */
+    fun getTextsAtRange(range: Rangeable): List<Node> {
+        val iterable = texts(range = range)
+        return iterable.toList()
     }
 
     /**
@@ -557,6 +708,11 @@ interface Node {
             it.updateNodes(before.plus(node).plus(after))
         }
         return updatedParentNode.let { replaceNode(parentPath, it) } ?: this
+    }
+
+    fun insertNodeByKey(key: String, node: Node): Node {
+        val path = getPathByKey(key)
+        return insertNode(path, node)
     }
 
     fun insertText(path: List<Int>, offset: Int, text: String): Node {
@@ -595,6 +751,13 @@ interface Node {
         return nodes?.firstOrNull { it.objectType == ObjectType.Inline } == null
     }
 
+    fun removeMark(path: List<Int>, mark: Mark): Node {
+        val node = assertDescendantByPath(path)
+        return if (node is TextNode) {
+            replaceNode(path, node.removeMark(mark))
+        } else this
+    }
+
     /**
      * Remove a node on [path].
      */
@@ -628,6 +791,15 @@ interface Node {
             ?.removeText(offset, length)
             ?.let { replaceNode(path, it) }
             ?: this
+    }
+
+    /**
+     * Resolve a `selection`, relative to the node, ensuring that the keys and
+     * offsets in the selection exist and that they are synced with the paths.
+     */
+    fun resolveSelection(selection: Selection): Selection {
+        // FIXME avoid force cast
+        return selection.normalize(this) as Selection
     }
 
     /**
@@ -679,7 +851,11 @@ interface Node {
      * @param {Object} options
      * @return {Iterable}
      */
-    fun texts(targetPath: List<Int> = listOf()): Iterable<Node> {
+    fun texts(
+        targetPath: List<Int> = listOf(),
+        range: Rangeable? = null,
+        direction: Direction = Direction.FORWARD
+    ): Iterable<Node> {
         return this.descendants(
             targetPath = targetPath,
             includeRoot = false,
@@ -687,7 +863,9 @@ interface Node {
             includeInlines = false,
             includeDocument = false,
             includeTarget = true,
-            includeText = true
+            includeText = true,
+            range = range,
+            direction = direction
         )
     }
 

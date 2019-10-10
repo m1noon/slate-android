@@ -16,8 +16,10 @@ data class InsertTextByPath(
 
             controller.applyOperation(Operation.InsertText(path, offset, text))
 
-            if (marks.orEmpty().isNotEmpty()) {
-                // TODO replaceMarksByPath
+            marks?.let {
+                if (it.isNotEmpty()) {
+                    controller.command(ReplaceMarksByPath(path, offset, text.length, it, true))
+                }
             }
         }
     }

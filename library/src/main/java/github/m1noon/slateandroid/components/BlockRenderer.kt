@@ -24,6 +24,7 @@ interface BlockRenderer {
         controller: IController,
         data: BlockNode.BlockRenderingData,
         text: String,
+        forceUpdateText: Boolean,
         component: Component
     ): Component
 }
@@ -49,10 +50,11 @@ class BlockRenderers(
         controller: IController,
         data: BlockNode.BlockRenderingData,
         text: String,
+        forceUpdateText: Boolean,
         component: Component
     ): Component {
         val renderer = renderers.get(data.type) ?: defaultRenderer
-        return renderer.rerenderLeafComponent(context, controller, data, text, component)
+        return renderer.rerenderLeafComponent(context, controller, data, text, forceUpdateText, component)
     }
 
     override fun wrapBranchComponent(

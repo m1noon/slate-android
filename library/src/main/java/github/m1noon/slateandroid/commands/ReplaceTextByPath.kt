@@ -13,6 +13,7 @@ data class ReplaceTextByPath(
 ) : FunctionCommand {
     override fun execute(controller: IController) {
         controller.withoutNormalizing { c ->
+            // FIXME crush if target length spans multiple nodes
             c.applyOperation(Operation.ReplaceText(path, offset, length, text, marks))
         }
     }

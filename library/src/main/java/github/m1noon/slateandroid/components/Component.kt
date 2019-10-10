@@ -9,7 +9,7 @@ interface Component {
     fun data(): BlockNode.BlockRenderingData
     fun setSyncState(start: Boolean)
     fun applyTextAppearance(@StyleRes styleRes: Int)
-    fun bindText(text: String)
+    fun bindText(text: String, forceUpdate: Boolean = false)
 
     /**
      * set up selection of [EditText] by current value of controller
