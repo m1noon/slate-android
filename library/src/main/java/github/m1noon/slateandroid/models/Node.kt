@@ -31,6 +31,7 @@ interface Node {
 
     fun updateKey(key: String): Node
     fun updateNodes(nodes: List<Node>): Node
+    fun mergeProperties(property: NodeProperty): Node
 
     enum class Direction {
         FORWARD,
@@ -176,6 +177,7 @@ interface Node {
         includeRoot: Boolean = false,
         includeTarget: Boolean = false,
         includeTargetAncestors: Boolean = false,
+        range: Rangeable? = null,
         onlyLeaves: Boolean = false,
         onlyTypes: Set<Type> = setOf()
     ): Iterable<Node> {
@@ -189,7 +191,8 @@ interface Node {
             upward = upward,
             includeRoot = includeRoot,
             includeTarget = includeTarget,
-            includeTargetAncestors = includeTargetAncestors
+            includeTargetAncestors = includeTargetAncestors,
+            range = range
         ) { node, path ->
             if (onlyLeaves && !node.isLeafBlock()) {
                 false
@@ -551,6 +554,13 @@ interface Node {
     }
 
     /**
+     * Get the bottom-most block descendants in a [range].
+     */
+    fun getLeafBlocksAtRange(range: Rangeable): List<Node> {
+        return blocks(range = range, onlyLeaves = true).toList()
+    }
+
+    /**
      * Get the next sibling of a node by [path].
      */
     fun getNextSibling(path: List<Int>): Node? {
@@ -800,6 +810,14 @@ interface Node {
     fun resolveSelection(selection: Selection): Selection {
         // FIXME avoid force cast
         return selection.normalize(this) as Selection
+    }
+
+    /**
+     * Set [property] on a node.
+     */
+    fun setNode(path: List<Int>, property: NodeProperty): Node {
+        val n = assertNodeByPath(path)
+        return replaceNode(path, n.mergeProperties(property))
     }
 
     /**

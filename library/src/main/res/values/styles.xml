@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="TextAppearance.SlateAndroid.Heading1" parent="android:TextAppearance.DeviceDefault">
+    <style name="TextAppearance.SlateAndroid.Heading1" parent="android:TextAppearance.DeviceDefault.Medium">
         <item name="android:textSize">@dimen/sa_heading_1_text_size</item>
         <item name="android:textStyle">bold</item>
     </style>
+
+    <style name="TextAppearance.SlateAndroid.Heading2" parent="android:TextAppearance.DeviceDefault.Medium">
+        <item name="android:textSize">@dimen/sa_heading_2_text_size</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.SlateAndroid.Heading3" parent="android:TextAppearance.DeviceDefault.Medium">
+        <item name="android:textSize">@dimen/sa_heading_3_text_size</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.SlateAndroid.Paragraph" parent="android:TextAppearance.DeviceDefault.Medium"></style>
 </resources>

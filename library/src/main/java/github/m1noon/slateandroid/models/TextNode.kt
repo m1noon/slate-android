@@ -22,6 +22,13 @@ data class TextNode(
         return this
     }
 
+    override fun mergeProperties(property: NodeProperty): Node {
+        return copy(
+            text = property.text ?: this.text,
+            marks = property.marks ?: this.marks
+        )
+    }
+
     /**
      * Add a [mark].
      */

@@ -101,6 +101,15 @@ data class Value(
         )
     }
 
+    /**
+     * Get the current start text node's closest block parent.
+     */
+    fun startBlock(): Node? {
+        return selection.start().key.let { key ->
+            if (key == "") null else document.getClosestBlockByKey(key)
+        }
+    }
+
     fun activeMarks(): Set<Mark> {
         return if (selection.isUnset()) {
             setOf()
@@ -205,6 +214,15 @@ data class Value(
         // FIXME map points?
 
         return value
+    }
+
+    /**
+     * Set [property] on a node.
+     */
+    fun setNode(path: List<Int>, property: NodeProperty): Value {
+        return copy(
+            document = document.setNode(path, property) as Document
+        )
     }
 
     /**

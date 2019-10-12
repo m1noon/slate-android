@@ -25,6 +25,20 @@ data class InlineNode(
         return copy(nodes = nodes)
     }
 
+    override fun mergeProperties(property: NodeProperty): Node {
+        var t = this.type
+        property.type?.let {
+            if (it is Type) {
+                t = it as Type
+            }
+        }
+        return copy(
+            type = t,
+            nodes = property.nodes ?: this.nodes,
+            data = property.data ?: this.data
+        )
+    }
+
     /**
      * Type of inline node
      */

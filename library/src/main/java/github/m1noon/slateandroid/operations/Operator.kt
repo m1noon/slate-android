@@ -35,6 +35,9 @@ class Operator {
             is Operation.SetSelection -> {
                 value.setSelection(operation.selection)
             }
+            is Operation.SetNode -> {
+                value.setNode(operation.path, operation.newProperty)
+            }
             is Operation.SplitNode -> {
                 value.splitNode(operation.path, operation.position, operation.property)
             }

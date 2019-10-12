@@ -4,5 +4,6 @@
     <github.m1noon.slateandroid.components.CustomEditText xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/edit_text"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:background="@null"/>
 </layout>

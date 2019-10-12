@@ -1,9 +1,9 @@
 package github.m1noon.slateandroid.models
 
 data class NodeProperty(
-    val type: String?,
-    val nodes: List<Node>?,
-    val data: Map<String, Any>?,
-    val text: String?,
-    val marks: List<Mark>?
+    val type: Node.Type? = null,
+    val nodes: List<Node>? = null,
+    val data: Data? = null,
+    val text: String? = null,
+    val marks: List<Mark>? = null
 )

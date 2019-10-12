@@ -15,9 +15,7 @@ class TextBlockRenderer : BlockRenderer {
     ): Component {
         return TextBlockComponent(context, controller, data, false).also { c ->
             c.bindText(text)
-            getTextStyle(data.type)?.let {
-                c.applyTextAppearance(it)
-            }
+            c.applyTextAppearance(getTextStyle(data.type))
             c.setSyncState(true)
         }
     }
@@ -35,9 +33,7 @@ class TextBlockRenderer : BlockRenderer {
                 c.setSyncState(false)
                 c.bindBlockData(data)
                 c.bindText(text, forceUpdateText)
-                getTextStyle(data.type)?.let {
-                    c.applyTextAppearance(it)
-                }
+                c.applyTextAppearance(getTextStyle(data.type))
                 c.setSyncState(true)
             }
         } else {
@@ -51,14 +47,16 @@ class TextBlockRenderer : BlockRenderer {
         blockType: BlockNode.Type,
         child: Component
     ): Component {
-        getTextStyle(blockType)?.let { child.applyTextAppearance(it) }
+        child.applyTextAppearance(getTextStyle(blockType))
         return child
     }
 
-    private fun getTextStyle(type: BlockNode.Type): Int? {
+    private fun getTextStyle(type: BlockNode.Type): Int {
         return when (type) {
             BlockNodeType.HEADING_1 -> R.style.TextAppearance_SlateAndroid_Heading1
-            else -> null
+            BlockNodeType.HEADING_2 -> R.style.TextAppearance_SlateAndroid_Heading2
+            BlockNodeType.HEADING_3 -> R.style.TextAppearance_SlateAndroid_Heading3
+            else -> R.style.TextAppearance_SlateAndroid_Paragraph
         }
     }
 }

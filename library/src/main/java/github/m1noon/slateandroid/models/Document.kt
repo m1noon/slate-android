@@ -17,4 +17,10 @@ data class Document(
     override fun updateNodes(nodes: List<Node>): Node {
         return copy(nodes = nodes)
     }
+
+    override fun mergeProperties(property: NodeProperty): Node {
+        return copy(
+            nodes = property.nodes ?: this.nodes
+        )
+    }
 }
