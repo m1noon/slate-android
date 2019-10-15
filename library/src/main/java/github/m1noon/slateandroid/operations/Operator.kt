@@ -14,6 +14,12 @@ class Operator {
             is Operation.InsertText -> {
                 value.insertText(operation.path, operation.offset, operation.text)
             }
+            is Operation.MergeNode -> {
+                value.mergeNode(operation.from, operation.to)
+            }
+            is Operation.MoveNode -> {
+                value.moveNode(operation.path, operation.newParentPath, operation.newIndex)
+            }
             is Operation.RemoveMark -> {
                 value.removeMark(operation.path, operation.mark)
             }
@@ -40,9 +46,6 @@ class Operator {
             }
             is Operation.SplitNode -> {
                 value.splitNode(operation.path, operation.position, operation.property)
-            }
-            is Operation.MergeNode -> {
-                value.mergeNode(operation.from, operation.to)
             }
             else -> value
         }

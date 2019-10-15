@@ -1,5 +1,6 @@
 package github.m1noon.slateandroid.models
 
+import android.util.Log
 import github.m1noon.slateandroid.utils.incrementPath
 import java.util.*
 
@@ -266,6 +267,25 @@ data class Value(
                     )
                 }
             } ?: v
+        }
+    }
+
+    /**
+     * Move a node by [path] to [newPath].
+     *
+     * A [newIndex] can be provided when move nodes by [key], to account for not
+     * being able to have a key for a location in the tree that doesn't exist yet.
+     */
+    fun moveNode(path: List<Int>, newPath: List<Int>, newIndex: Int = 0): Value {
+        if (path == newPath) {
+            return this
+        }
+
+        // TODO map points
+        return copy(
+            document = document.moveNode(path, newPath, newIndex) as Document
+        ).let { v ->
+            v.mapPoints { it.copy(path = v.document.getPathByKey(it.key)) }
         }
     }
 

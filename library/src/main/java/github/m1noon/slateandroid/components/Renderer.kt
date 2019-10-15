@@ -5,37 +5,18 @@ import github.m1noon.slateandroid.controllers.IController
 import github.m1noon.slateandroid.models.*
 
 class Renderer(
-    val context: Context
-) {
-
-    val blockRenderer: BlockRenderer = DefaultBlockRenderer
-    val inlineRenderer: InlineRenderer = DefaultInlineRenderer
+    val context: Context,
+    val blockRenderer: BlockRenderer = DefaultBlockRenderer,
+    val inlineRenderer: InlineRenderer = DefaultInlineRenderer,
     val markRenderer: MarkRenderer = DefaultMarkRenderer
-    val componentMap: MutableMap<String, Component> = mutableMapOf()
+) {
+    private val componentMap: MutableMap<String, Component> = mutableMapOf()
 
-    /**
-     * Render document from scratch.
-     */
-    fun renderDocument(controller: IController, document: Document): List<Component> {
-        val list: MutableList<Component> = mutableListOf()
-        document.nodes.forEach { n ->
-            when (n) {
-                is BlockNode -> {
-                    n.getBlockRenderingData(listOf())
-                        .map {
-                            val component = createNewBlockComponent(controller, it)
-                            componentMap.put(it.key, component)
-                            component
-                        }.forEach {
-                            list.add(it)
-                        }
-                }
-            }
-        }
-        return list.toList()
-    }
-
-    fun render(controller: IController, document: Document, forceUpdateText: Boolean): List<Component> {
+    fun render(
+        controller: IController,
+        document: Document,
+        forceUpdateText: Boolean
+    ): List<Component> {
 
         return document.nodes.map { it as BlockNode }.flatMap { it.getBlockRenderingData() }
             .map { data ->

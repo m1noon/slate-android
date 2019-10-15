@@ -4,14 +4,14 @@ import github.m1noon.slateandroid.controllers.IController
 
 data class SplitDescendantByKey(
     val key: String,
-    val textPath: List<Int>,
+    val textKey: String,
     val textOffset: Int
 ) : FunctionCommand {
     override fun execute(controller: IController) {
         controller.command(
             SplitDescendantByPath(
                 controller.getValue().document.getPathByKey(key),
-                textPath,
+                controller.getValue().document.getPathByKey(textKey),
                 textOffset
             )
         )

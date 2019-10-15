@@ -1,9 +1,6 @@
 package github.m1noon.slateandroid.models
 
-import github.m1noon.slateandroid.utils.decrementPath
-import github.m1noon.slateandroid.utils.equalsIgnoringText
-import github.m1noon.slateandroid.utils.incrementPath
-import github.m1noon.slateandroid.utils.lift
+import github.m1noon.slateandroid.utils.*
 import java.lang.AssertionError
 import java.lang.IllegalStateException
 import java.lang.RuntimeException
@@ -174,10 +171,10 @@ interface Node {
         direction: Direction = Direction.FORWARD,
         downward: Boolean = true,
         upward: Boolean = true,
-        includeRoot: Boolean = false,
-        includeTarget: Boolean = false,
-        includeTargetAncestors: Boolean = false,
         range: Rangeable? = null,
+        includeRoot: Boolean = false,
+        includeTarget: Boolean = range != null,
+        includeTargetAncestors: Boolean = false,
         onlyLeaves: Boolean = false,
         onlyTypes: Set<Type> = setOf()
     ): Iterable<Node> {
@@ -212,24 +209,28 @@ interface Node {
         direction: Direction = Direction.FORWARD,
         downward: Boolean = true,
         upward: Boolean = true,
+        range: Rangeable? = null,
         includeRoot: Boolean = false,
         includeDocument: Boolean = true,
         includeBlocks: Boolean = true,
         includeInlines: Boolean = true,
-        includeTarget: Boolean = false,
+        includeTarget: Boolean = range != null,
         includeTargetAncestors: Boolean = false,
         includeText: Boolean = true,
-        range: Rangeable? = null,
         match: ((node: Node, path: List<Int>) -> Boolean)? = null
     ): Iterable<Node> {
         val root: Node = this
-        val targetNode = getNodeByPath(targetPath)
         var targetRange: Rangeable? = range
+        val targetPath = targetRange?.start()?.path ?: targetPath
+        val targetNode = assertNodeByPath(targetPath)
         var path: List<Int>? = targetRange?.start()?.path ?: targetPath
         var node: Node? = path?.let { getNodeByPath(it) }
         val visited: MutableSet<Node> = mutableSetOf()
+        val startPath = targetRange?.start()?.path
         val endPath: List<Int>? = targetRange?.end()?.path
         var isEndRange: Boolean = false
+        var includedStart = false
+        var includingStart = false
 
         return object : Iterable<Node> {
             override fun iterator(): Iterator<Node> {
@@ -266,6 +267,29 @@ interface Node {
                         currentPath: List<Int>,
                         currentNode: Node
                     ): Pair<List<Int>, Node>? {
+                        // When iterating over a range, we need to include the specific
+                        // ancestors in the start path of the range manually.
+                        if (startPath != null && !includedStart) {
+                            if (!includingStart) {
+                                includingStart = true
+                                val newPath = listOf<Int>()
+                                val newNode = root
+                                if (startPath.isEmpty()) {
+                                    includedStart = true
+                                }
+                                return result(newPath, newNode)
+                            }
+
+                            if (currentPath.size == startPath.size - 1) {
+                                includedStart = true
+                                return result(targetPath, targetNode)
+                            }
+
+                            val newPath = startPath.subList(0, currentPath.size + 1)
+                            val newNode = root.assertNodeByPath(newPath)
+                            return result(newPath, newNode)
+                        }
+
                         // If children nodes exists, move to the top of the child node. (Except when children has been scanned once)
                         // If we're allowed to go downward, and we haven't decsended yet, do so.
                         if (
@@ -326,6 +350,10 @@ interface Node {
                     }
 
                     private fun result(path: List<Int>, node: Node): Pair<List<Int>, Node>? {
+                        if (startPath != null && !includingStart) {
+                            return calcNext(path, node)
+                        }
+
                         if (!includeTarget && targetPath.equals(path)) {
                             return calcNext(path, node)
                         }
@@ -561,6 +589,21 @@ interface Node {
     }
 
     /**
+     * Get the block node after a descendant text node by [path].
+     */
+    fun getNextBlock(path: List<Int>): Node? {
+        val iter = blocks(path, onlyLeaves = true).iterator()
+        if (iter.hasNext()) {
+            return iter.next()
+        }
+        return null
+    }
+
+    fun getNextBlockByKey(key: String): Node? {
+        return getNextBlock(getPathByKey(key))
+    }
+
+    /**
      * Get the next sibling of a node by [path].
      */
     fun getNextSibling(path: List<Int>): Node? {
@@ -706,6 +749,13 @@ interface Node {
     }
 
     /**
+     * Recursively check if a child node exists.
+     */
+    fun hasDescendant(key: String): Boolean {
+        return getDescendantByKey(key) != null
+    }
+
+    /**
      * Insert a [node].
      */
     fun insertNode(path: List<Int>, node: Node): Node {
@@ -759,6 +809,23 @@ interface Node {
             return false
         }
         return nodes?.firstOrNull { it.objectType == ObjectType.Inline } == null
+    }
+
+    /**
+     * Move a node by [path] to [newParentPath].
+     *
+     * A [newIndex] can be provided when move nodes by [key], to account for not
+     * being able to have a key for a location in the tree that doesn't exist yet.
+     */
+    fun moveNode(path: List<Int>, newParentPath: List<Int>, newIndex: Int = 0): Node {
+        val node = assertNodeByPath(path)
+        val newPath = newParentPath.plus(newIndex)
+        val insertPath = if (path.isYounger(newParentPath) && path.size < newParentPath.size) {
+            newPath.decrementPath(1, newPath.min(path) - 1)
+        } else newPath
+
+        // FIXME this operation is different from original slate-js source code.
+        return removeNode(path).insertNode(insertPath, node)
     }
 
     fun removeMark(path: List<Int>, mark: Mark): Node {

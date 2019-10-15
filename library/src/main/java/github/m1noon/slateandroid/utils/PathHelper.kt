@@ -3,22 +3,32 @@ package github.m1noon.slateandroid.utils
 import github.m1noon.slateandroid.operations.Operation
 import kotlin.math.min
 
+/**
+ * Compare paths to see which is before or after.
+ */
 fun List<Int>.comparePath(target: List<Int>): Int? {
     val minSize = min(this.size, target.size)
-    for (i in 0..minSize) {
-        val pv = this.get(i)
-        val tv = target.get(i)
-        if (pv < tv) return -1
-        if (pv > tv) return 1
+    if (minSize > 0) {
+        for (i in 0..minSize - 1) {
+            val pv = this.get(i)
+            val tv = target.get(i)
+            if (pv < tv) return -1
+            if (pv > tv) return 1
+        }
     }
 
     return if (this.size == target.size) 0 else null
 }
 
+/**
+ * Crop paths to an equal size with target, defaulting to the shortest.
+ */
 fun List<Int>.cropPath(
     target: List<Int>, size: Int = min(this.size, target.size)
 ): Pair<List<Int>, List<Int>> {
-    return Pair(this.subList(0, size), target.subList(0, size))
+    val croppedThis = if (this.size >= size) this.subList(0, size) else listOf()
+    val croppedTarget = if (target.size >= size) target.subList(0, size) else listOf()
+    return Pair(croppedThis, croppedTarget)
 }
 
 /**
@@ -95,6 +105,18 @@ fun List<Int>.isOlder(target: List<Int>): Boolean {
 }
 
 /**
+ * Is this path younger than a [target] path? Meaning that it ends as a younger
+ * sibling of one of the indexes in the target.
+ */
+fun List<Int>.isYounger(target: List<Int>): Boolean {
+    val index = this.size - 1
+    val cropped = this.cropPath(target, index)
+    val pl = getOrElse(index) { 0 }
+    val tl = target.getOrElse(index) { 0 }
+    return cropped.first == cropped.second && pl < tl
+}
+
+/**
  * Lift a `path` to refer to its `n`th ancestor.
  */
 fun List<Int>.lift(n: Int = 1): List<Int> {
@@ -104,6 +126,14 @@ fun List<Int>.lift(n: Int = 1): List<Int> {
     val ancestor = subList(0, size - n)
     return ancestor
 }
+
+/**
+ * Get the minimum length of paths this and [target].
+ */
+fun List<Int>.min(target: List<Int>): Int {
+    return min(this.size, target.size)
+}
+
 
 fun List<Int>.transform(operation: Operation): List<List<Int>> {
     if (this.isEmpty()) {
@@ -119,6 +149,6 @@ fun List<Int>.transform(operation: Operation): List<List<Int>> {
             }
         }
         // TODO other operation
-        else -> listOf()
+        else -> listOf(this)
     }
 }

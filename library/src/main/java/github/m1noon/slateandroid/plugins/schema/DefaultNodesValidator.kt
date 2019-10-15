@@ -10,6 +10,15 @@ data class DefaultNodesValidator(
 ) : SchemaNodesValidator {
 
     constructor(objectType: ObjectType) : this(match = listOf(DefaultNodeValidator(objectType)))
+    constructor(objectType: ObjectType, type: Node.Type) : this(
+        match = listOf(
+            DefaultNodeValidator(
+                objectType = objectType,
+                type = type
+            )
+        )
+    )
+
     constructor(validator: SchemaNodeValidator) : this(match = listOf(validator))
 
     override fun invoke(nodes: List<Node>?, matchNode: Node): ValidationError? {

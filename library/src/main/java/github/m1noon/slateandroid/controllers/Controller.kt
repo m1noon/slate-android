@@ -9,13 +9,15 @@ import github.m1noon.slateandroid.models.Value
 import github.m1noon.slateandroid.operations.Operation
 import github.m1noon.slateandroid.operations.Operator
 import github.m1noon.slateandroid.plugins.schema.SchemaRule
-import github.m1noon.slateandroid.plugins.schema.schemaRuleDefault
+import github.m1noon.slateandroid.utils.getAncestorPaths
 import github.m1noon.slateandroid.utils.getAncestorPathsWithMe
+import github.m1noon.slateandroid.utils.incrementPath
 import github.m1noon.slateandroid.utils.transform
 import java.lang.RuntimeException
 
 
 interface IController {
+    fun setup(config: Config)
     fun command(c: Command): IController
     fun applyOperation(operation: Operation): IController
     fun flush(): IController
@@ -26,16 +28,18 @@ interface IController {
     fun withoutNormalizing(fn: (IController) -> Unit): IController
 }
 
-fun NewController(onChange: (IController, Value, List<Operation>) -> Unit): IController {
+fun newController(
+    onChange: (
+        IController, Value, List<Operation>
+    ) -> Unit
+): IController {
     return Controller(onChange)
 }
 
 private class Controller(
     val onChange: (IController, Value, List<Operation>) -> Unit,
     var _value: Value = Value(),
-    val operator: Operator = Operator(),
-    val schemaRule: SchemaRule = schemaRuleDefault,
-    val readOnly: Boolean = false
+    val operator: Operator = Operator()
 ) : IController {
 
     private data class Tmp(
@@ -46,8 +50,15 @@ private class Controller(
         val save: Boolean = true
     )
 
+    lateinit var schemaRule: SchemaRule
+    var readOnly: Boolean = false
     var operations: List<Operation> = listOf()
     var tmp: Tmp = Tmp()
+
+    override fun setup(config: Config) {
+        this.schemaRule = config.schemaRule
+        this.readOnly = config.readOnly
+    }
 
     override fun applyOperation(operation: Operation): IController {
 //        // Save the operation into the history. Since `save` is a command, we need
@@ -63,10 +74,10 @@ private class Controller(
 
         // Get the paths of the affected nodes, and mark them as dirty.
         val newDirtyPaths = getDirtyPaths(operation)
-        val dirty: List<List<Int>> = mutableListOf()
+        val dirty: MutableList<List<Int>> = mutableListOf()
         this.tmp.dirty.forEach { path ->
-            path.transform(operation).forEach { transfoemed ->
-                dirty.plus(transfoemed)
+            path.transform(operation).forEach { transformed ->
+                dirty.add(transformed)
             }
         }
         // PERF: De-dupe the paths so we don't do extra normalization.
@@ -163,19 +174,49 @@ private class Controller(
      * @return {Array}
      */
     fun getDirtyPaths(operation: Operation): List<List<Int>> {
+        val value = getValue()
         return when (operation) {
             // TODO add other operations
+            is Operation.AddMark -> operation.path.getAncestorPathsWithMe()
             is Operation.InsertText -> operation.path.getAncestorPathsWithMe()
+            is Operation.RemoveMark -> operation.path.getAncestorPathsWithMe()
+            is Operation.RemoveText -> operation.path.getAncestorPathsWithMe()
+            is Operation.SetNode -> operation.path.getAncestorPathsWithMe()
             is Operation.InsertNode -> {
                 val path = operation.path
                 val table = operation.node.getKeysToPathTable()
                 val nodePaths = table.values.map { path.plus(it) }
                 return path.getAncestorPathsWithMe().plus(nodePaths)
             }
+            is Operation.SplitNode -> {
+                val nextPath = operation.path.incrementPath()
+                return operation.path.getAncestorPathsWithMe().plus(listOf(nextPath))
+            }
+            is Operation.MergeNode -> {
+                val descendantPaths = value.document.descendants(operation.to)
+                    .map { value.document.getPathByKey(it.key) }
+                return operation.from.getAncestorPaths() + operation.to.getAncestorPathsWithMe() + descendantPaths
+            }
+            is Operation.MoveNode -> {
+                if (operation.path == operation.newParentPath
+                    || operation.path == operation.newParentPath.plus(operation.newIndex)
+                ) {
+                    return listOf()
+                }
+                val oldAncestors = operation.path.getAncestorPaths()
+                val newAncestorsWithMe =
+                    operation.newParentPath.plus(operation.newIndex).getAncestorPathsWithMe()
+                return oldAncestors + newAncestorsWithMe
+
+            }
+            is Operation.RemoveNode -> operation.path.getAncestorPaths()
             else -> listOf()
         }
     }
 
+    /**
+     * Normalize any new "dirty" paths that have been added to the change.
+     */
     fun normalizeDirtyPaths() {
         if (!tmp.normalize) {
             return
@@ -184,7 +225,7 @@ private class Controller(
             return
         }
         withoutNormalizing {
-            while (!this.tmp.dirty.isEmpty()) {
+            while (this.tmp.dirty.isNotEmpty()) {
                 val path = this.tmp.dirty.get(0)
                 this.tmp = this.tmp.copy(dirty = this.tmp.dirty.drop(1))
                 normalizeNodeByPath(path)
@@ -192,10 +233,13 @@ private class Controller(
         }
     }
 
+    /**
+     * Normalize the node at a specific [givenPath].
+     */
     fun normalizeNodeByPath(givenPath: List<Int>) {
         var path = givenPath
         val value = getValue()
-        var node: Node? = value.document.assertNodeByPath(path)
+        var node: Node? = value.document.getNodeByPath(path) ?: return
         var iterations = 0
         val max = 100 + if (node?.objectType == ObjectType.Text) 1 else node?.nodes.orEmpty().size
 

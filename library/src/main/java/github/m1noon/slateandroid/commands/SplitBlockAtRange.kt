@@ -20,7 +20,7 @@ data class SplitBlockAtRange(val range: Selection, val height: Int = 1) : Functi
         }
 
         controller.withoutNormalizing { c ->
-            c.command(SplitDescendantByKey(node.key, start.path, start.offset ?: 0))
+            c.command(SplitDescendantByKey(node.key, start.key, start.offset ?: 0))
 
             // TODO resolve range
         }

@@ -9,7 +9,6 @@ import android.view.KeyEvent
 import android.view.View
 import android.widget.EditText
 import android.text.Spanned
-import androidx.core.text.toSpanned
 
 
 class CustomEditText : EditText, View.OnKeyListener {
@@ -68,11 +67,21 @@ class CustomEditText : EditText, View.OnKeyListener {
 
     private class InputCompleteListener(val listener: (s: Editable?) -> Unit) : TextWatcher {
 
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        private var justDeleteFlag = false
+
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            justDeleteFlag = count == 0
+        }
 
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
         override fun afterTextChanged(s: Editable?) {
+            // skip when content is not added just by deleting.
+            if (justDeleteFlag) {
+                justDeleteFlag = false
+                return
+            }
+
             val fixed = s?.let { s ->
                 val spanned = s.getSpans(0, s.length, Object::class.java)
                 spanned.firstOrNull {

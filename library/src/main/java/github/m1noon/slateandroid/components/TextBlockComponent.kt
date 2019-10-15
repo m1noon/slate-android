@@ -22,8 +22,7 @@ class TextBlockComponent(
     val controller: IController,
     private var data: BlockNode.BlockRenderingData,
     private var sync: Boolean = false
-) : BlockComponent,
-    CustomEditText.Listener, TextWatcher, TextView.OnEditorActionListener {
+) : BlockComponent, CustomEditText.Listener, TextWatcher, TextView.OnEditorActionListener {
 
     private val TAG = "TextBlockComponent"
     private val binding: TextBlockBinding
@@ -31,6 +30,7 @@ class TextBlockComponent(
 
     init {
         binding = TextBlockBinding.inflate(LayoutInflater.from(context))
+        binding.indicatorText = ""
         binding.editText.addTextChangedListener(this)
         binding.editText.setListener(this)
         binding.editText.setOnEditorActionListener(this)
@@ -65,7 +65,6 @@ class TextBlockComponent(
             binding.editText.setText(htmlText)
             // restore selection
             binding.editText.setSelection(start, end)
-//            syncSelection()
             skippedText = ""
         } else {
             skippedText = text
@@ -74,6 +73,7 @@ class TextBlockComponent(
 
     override fun applyTextAppearance(styleRes: Int) {
         binding.editText.setTextAppearance(binding.root.context, styleRes)
+        binding.indicator.setTextAppearance(binding.root.context, styleRes)
     }
 
     override fun bindBlockData(data: BlockNode.BlockRenderingData) {
@@ -242,32 +242,28 @@ class TextBlockComponent(
             KeyEvent.ACTION_DOWN -> {
                 if (event.keyCode == KeyEvent.KEYCODE_ENTER) {
                     if (isSelectionAtEnd()) {
-                        // get next non-void leaf block  TODO get not void leafBlock
-                        val nextLeafBlock =
-                            controller.getValue().document.getNextLeafBlockByKey(data.key)
-
-                        if (nextLeafBlock != null) {
-                            // if there is a next leaf block with text, move selection to there
-                            controller.command(MoveForward())
-                        } else {
-                            // else, create new block node to end of parent block.
-                            val document = controller.getValue().document
-                            document.getParentByKey(data.key)?.let { parent ->
-                                // TODO set correct block type
-                                val path = document.getPathByKey(parent.key)
-                                controller.command(
-                                    InsertNodeByPath(
-                                        path, parent.nodes.orEmpty().size, BlockNode(
-                                            key = UUID.randomUUID().toString(),
-                                            type = BlockNodeType.PARAGRAPH,
-                                            nodes = listOf(
-                                                TextNode(key = UUID.randomUUID().toString())
-                                            ),
-                                            data = null
-                                        )
+                        // create new block node to end of parent block.
+                        val document = controller.getValue().document
+                        document.getParentByKey(data.key)?.let { parent ->
+                            // TODO set correct block type
+                            val path = document.getPathByKey(parent.key)
+                            val blockNodeType = data.type
+                            val index = parent.nodes.orEmpty().indexOfFirst { it.key == data.key }
+                                .let { if (it == -1) 0 else it }
+                            controller.command(
+                                InsertNodeByPath(
+                                    path,
+                                    index + 1,
+                                    BlockNode(
+                                        key = UUID.randomUUID().toString(),
+                                        type = blockNodeType,
+                                        nodes = listOf(
+                                            TextNode(key = UUID.randomUUID().toString())
+                                        ),
+                                        data = null
                                     )
                                 )
-                            }
+                            )
                         }
                     } else {
                         // split node if current selection is between texts
@@ -327,6 +323,13 @@ class TextBlockComponent(
         }
     }
 
+    /**
+     * set up indicator
+     */
+    fun bindIndicator(text: String = "") {
+        binding.indicatorText = text
+    }
+
     // Set up selection in model by current selection state of view
     // you should make sure that edit text has focus before call this method
     private fun invalidateSelection() {
@@ -334,7 +337,7 @@ class TextBlockComponent(
     }
 
     private fun headPoint(): Point? {
-        return data.nodes.firstOrNull()
+        return data.nodes.firstOrNull()?.getFirstText()
             ?.let { Point(it.key, 0, controller.getValue().document.getPathByKey(it.key)) }
     }
 

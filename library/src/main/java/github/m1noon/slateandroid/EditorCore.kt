@@ -6,8 +6,9 @@ import android.util.Log
 import android.widget.LinearLayout
 import github.m1noon.slateandroid.commands.Command
 import github.m1noon.slateandroid.components.*
+import github.m1noon.slateandroid.controllers.Config
 import github.m1noon.slateandroid.controllers.IController
-import github.m1noon.slateandroid.controllers.NewController
+import github.m1noon.slateandroid.controllers.newController
 import github.m1noon.slateandroid.models.*
 import github.m1noon.slateandroid.operations.Operation
 
@@ -22,8 +23,9 @@ open class EditorCore : LinearLayout {
         defStyleAttr
     )
 
-    val renderer: Renderer = Renderer(context)
-    protected val controller: IController = NewController { c, v, ops ->
+    lateinit var renderer: Renderer
+
+    protected val controller: IController = newController { c, v, ops ->
         Log.d(TAG, "OnValueChanged: ${ops}")
         logNode(v.document)
         val updateSelection: Boolean = ops.firstOrNull { it.updateSelection } != null
@@ -35,6 +37,10 @@ open class EditorCore : LinearLayout {
 
     fun getValue(): Value {
         return controller.getValue()
+    }
+
+    fun setup(config: Config) {
+        this.controller.setup(config)
     }
 
     fun command(c: Command) {
@@ -76,23 +82,23 @@ open class EditorCore : LinearLayout {
                 detachViewFromParent(layoutedIndex)
                 attachViewToParent(view, index, view.layoutParams)
             }
-
-            // update selection
-            if (updateSelection) {
-                component.syncSelection()
-            }
         }
 
         // remove legacy views
         if (childCount > components.size) {
             removeViews(components.size, childCount - components.size)
         }
+
+        // update selection (This should be executed after view settings because it may make side-effect)
+        if (updateSelection) {
+            components.forEach { it.syncSelection() }
+        }
     }
 
     private fun logNode(n: Node, prefix: String = "") {
         Log.d(
             TAG,
-            "[onValueChanged] ${prefix} ${n.objectType}/${n.type} '${n.text}' 'marks[${n.marks}]'"
+            "[onValueChanged] ${prefix} ${n.objectType}/${n.type} '${n.text}' 'marks[${n.marks}]' 'key:${n.key}'"
         )
         for (child in n.nodes.orEmpty()) {
             logNode(child, "${prefix}--")

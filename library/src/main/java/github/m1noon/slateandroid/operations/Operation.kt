@@ -24,9 +24,12 @@ abstract class Operation(val updateSelection: Boolean = true, val updateText: Bo
         val text: String
     ) : Operation(updateSelection = false, updateText = false)
 
+    data class MergeNode(val from: List<Int>, val to: List<Int>) : Operation()
+
     data class MoveNode(
         val path: List<Int>,
-        val newPath: List<Int>
+        val newParentPath: List<Int>,
+        val newIndex: Int
     ) : Operation()
 
     data class RemoveMark(
@@ -67,6 +70,4 @@ abstract class Operation(val updateSelection: Boolean = true, val updateText: Bo
         val property: NodeProperty?,
         val skipUpdate: Boolean = false
     ) : Operation(updateSelection = !skipUpdate, updateText = !skipUpdate)
-
-    data class MergeNode(val from: List<Int>, val to: List<Int>) : Operation()
 }
