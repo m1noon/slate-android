@@ -22,11 +22,6 @@ data class BlockNode(
 
     override fun mergeProperties(property: NodeProperty): Node {
         var t = this.type
-        property.type?.let {
-            if (it is Type) {
-                t = it as Type
-            }
-        }
         return copy(
             type = t,
             nodes = property.nodes ?: this.nodes,
@@ -37,7 +32,7 @@ data class BlockNode(
     /**
      * Type of block node
      */
-    interface Type : Node.Type
+    abstract class Type(label: String) : Node.Type(label)
 
     /**
      * Data to use when render BlockNode

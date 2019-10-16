@@ -27,11 +27,6 @@ data class InlineNode(
 
     override fun mergeProperties(property: NodeProperty): Node {
         var t = this.type
-        property.type?.let {
-            if (it is Type) {
-                t = it as Type
-            }
-        }
         return copy(
             type = t,
             nodes = property.nodes ?: this.nodes,
@@ -42,5 +37,5 @@ data class InlineNode(
     /**
      * Type of inline node
      */
-    interface Type : Node.Type
+    abstract class Type(label: String) : Node.Type(label)
 }

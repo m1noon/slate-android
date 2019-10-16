@@ -24,7 +24,11 @@ interface Node {
     val text: String?
     val marks: List<Mark>?
 
-    interface Type
+    abstract class Type(private val label: String) {
+        override fun toString(): String {
+            return label
+        }
+    }
 
     fun updateKey(key: String): Node
     fun updateNodes(nodes: List<Node>): Node
@@ -190,7 +194,7 @@ interface Node {
             includeTarget = includeTarget,
             includeTargetAncestors = includeTargetAncestors,
             range = range
-        ) { node, path ->
+        ) { node, _ ->
             if (onlyLeaves && !node.isLeafBlock()) {
                 false
             } else if (onlyTypes.isNotEmpty() && !onlyTypes.contains(node.type)) {
@@ -767,7 +771,7 @@ interface Node {
             val after = it.nodes.orEmpty().subList(index, it.nodes.orEmpty().size)
             it.updateNodes(before.plus(node).plus(after))
         }
-        return updatedParentNode.let { replaceNode(parentPath, it) } ?: this
+        return updatedParentNode.let { replaceNode(parentPath, it) }
     }
 
     fun insertNodeByKey(key: String, node: Node): Node {

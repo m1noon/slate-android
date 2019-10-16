@@ -34,8 +34,7 @@ class TextBlockComponent(
         binding.editText.addTextChangedListener(this)
         binding.editText.setListener(this)
         binding.editText.setOnEditorActionListener(this)
-        binding.editText.setOnFocusChangeListener { v, hasFocus ->
-            Log.d(TAG, "[onFocusChanged]: ${hasFocus}")
+        binding.editText.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
                 invalidateSelection()
             }
@@ -209,7 +208,10 @@ class TextBlockComponent(
                 if (controller.isVoid(prevBlock.key)) {
                     // 4.c)
                     controller.command(RemoveNodeByKey(prevBlock.key))
-                    onSelectionChanged(binding.editText.selectionStart, binding.editText.selectionEnd)
+                    onSelectionChanged(
+                        binding.editText.selectionStart,
+                        binding.editText.selectionEnd
+                    )
                 } else {
                     // 4.b)
                     controller.command(MergeBlocksByKey(data.key, prevBlock.key))
@@ -288,13 +290,13 @@ class TextBlockComponent(
         /*Do nothing*/
     }
 
-    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-        Log.d(TAG, "[onTextChange]:${s}, start:${start}, before:${before}, count:${count}")
+    override fun onTextChanged(cs: CharSequence?, start: Int, before: Int, count: Int) {
+        Log.d(TAG, "[onTextChange]:${cs}, start:${start}, before:${before}, count:${count}")
         if (!sync) {
             return
         }
 
-        s?.let { s ->
+        cs?.let { s ->
             if (before == 0) {
                 controller.command(InsertText(s.substring(start, start + count)))
             } else {

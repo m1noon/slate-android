@@ -1,8 +1,8 @@
 package github.m1noon.slateandroid.models
 
-enum class BlockNodeType : BlockNode.Type {
-    HEADING_1,
-    HEADING_2,
-    HEADING_3,
-    PARAGRAPH
+sealed class BlockNodeType(label: String) : BlockNode.Type(label) {
+    object HEADING_1 : BlockNodeType("heading1")
+    object HEADING_2 : BlockNodeType("heading2")
+    object HEADING_3 : BlockNodeType("heading2")
+    object PARAGRAPH : BlockNodeType("paragraph")
 }

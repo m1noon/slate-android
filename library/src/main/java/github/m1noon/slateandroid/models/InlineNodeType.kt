@@ -1,5 +1,5 @@
 package github.m1noon.slateandroid.models
 
-enum class InlineNodeType : InlineNode.Type {
-    A
+sealed class InlineNodeType(label: String) : InlineNode.Type(label) {
+    object A : InlineNodeType("a")
 }
