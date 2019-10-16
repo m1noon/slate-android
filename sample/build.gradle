@@ -10,8 +10,8 @@ android {
         applicationId "github.m1noon.slateandroid.sample"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 1
-        versionName "1.0"
+        versionCode "$library_version_code" as int
+        versionName "$library_version"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

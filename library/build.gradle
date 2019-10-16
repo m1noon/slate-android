@@ -2,6 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
+apply plugin: 'com.novoda.bintray-release'
 android {
     compileSdkVersion 29
 
@@ -9,8 +10,8 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 1
-        versionName "1.0"
+        versionCode "$library_version_code" as int
+        versionName "$library_version"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'consumer-rules.pro'
@@ -40,6 +41,19 @@ android {
             }
         }
     }
+    lintOptions {
+        abortOnError false
+    }
+}
+
+publish {
+    userOrg = "${library_user_org}"
+    groupId = "${library_group_name}"
+    artifactId = 'slate-android'
+    publishVersion = "${library_version}"
+    desc = 'core library of slate-android'
+    website = "${library_web_site}"
+    repoName = "${library_repo_name}"
 }
 
 dependencies {
