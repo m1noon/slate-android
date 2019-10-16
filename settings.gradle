@@ -1,2 +1,2 @@
-include ':sample', ':library', ':slate-android-component-list'
+include ':sample', ':library', ':slate-android-component-list', ':slate-android-component-image'
 rootProject.name='slate-android'

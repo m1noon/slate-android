@@ -23,6 +23,8 @@ interface IController {
     fun flush(): IController
     fun normalize(): IController
     fun getValue(): Value
+    fun isVoid(key: String): Boolean
+    fun isVoid(path: List<Int>): Boolean
     fun setValue(value: Value, forceNormalize: Boolean? = null): IController
     fun updateValue(fn: (Value) -> Value): IController
     fun withoutNormalizing(fn: (IController) -> Unit): IController
@@ -136,6 +138,14 @@ private class Controller(
 
     override fun getValue(): Value {
         return _value
+    }
+
+    override fun isVoid(key: String): Boolean {
+        return isVoid(_value.document.getPathByKey(key))
+    }
+
+    override fun isVoid(path: List<Int>): Boolean {
+        return schemaRule.isVoid(_value.document.assertNodeByPath(path))
     }
 
     override fun setValue(value: Value, forceNormalize: Boolean?): IController {

@@ -206,12 +206,15 @@ class TextBlockComponent(
 
             // 2), 4.a) get previous leaf block
             value.document.getPreviousLeafBlockByKey(data.key)?.let { prevBlock ->
-                // TODO check the block is void
-                // 4.b)
-                controller.command(MergeBlocksByKey(data.key, prevBlock.key))
+                if (controller.isVoid(prevBlock.key)) {
+                    // 4.c)
+                    controller.command(RemoveNodeByKey(prevBlock.key))
+                    onSelectionChanged(binding.editText.selectionStart, binding.editText.selectionEnd)
+                } else {
+                    // 4.b)
+                    controller.command(MergeBlocksByKey(data.key, prevBlock.key))
+                }
                 return true
-
-                // 4.c)
             }
 
         }

@@ -18,7 +18,7 @@ data class SchemaRule(
     }
 
     fun isVoid(node: Node): Boolean {
-        return findRule(node)?.isVoid ?: false
+        return findRules(node).firstOrNull { it.isVoid } != null
     }
 
     fun validateNode(node: Node, controller: IController): SchemaError? {

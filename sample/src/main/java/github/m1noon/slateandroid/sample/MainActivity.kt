@@ -3,15 +3,20 @@ package github.m1noon.slateandroid.sample
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import github.m1noon.slate_android_component_image.*
 import github.m1noon.slateandroid.Editor
 import github.m1noon.slateandroid.commands.*
 import github.m1noon.slateandroid.components.BlockRenderers
 import github.m1noon.slateandroid.components.Renderer
 import github.m1noon.slateandroid.controllers.Config
 import github.m1noon.slateandroid.models.*
+import github.m1noon.slateandroid.operations.Operation
 import github.m1noon.slateandroid.plugins.schema.SchemaRule
 import github.m1noon.slateandroid.plugins.schema.coreSchemaRules
+import github.m1noon.slateandroid.utils.incrementPath
+import github.m1noon.slateandroid.utils.isBeforePath
 import github.m1noon.slateandroid.utils.lift
+import github.m1noon.slateandroid.utils.newTextBlockNode
 import github.m1noon.slateandroidcomponentlist.ListBlockNodeType
 import github.m1noon.slateandroidcomponentlist.ListBlockRenderer
 import github.m1noon.slateandroidcomponentlist.UnwrapListItemByKey
@@ -28,7 +33,7 @@ class MainActivity : AppCompatActivity() {
         editor.setup(
             Config(
                 schemaRule = SchemaRule(
-                    coreSchemaRules + listSchemaRules
+                    coreSchemaRules + listSchemaRules + imageSchemaRules
                 )
             )
         )
@@ -38,16 +43,20 @@ class MainActivity : AppCompatActivity() {
                 renderers = mapOf(
                     ListBlockNodeType.LI to ListBlockRenderer(),
                     ListBlockNodeType.OL to ListBlockRenderer(),
-                    ListBlockNodeType.UL to ListBlockRenderer()
+                    ListBlockNodeType.UL to ListBlockRenderer(),
+                    ImageBlockNodeType to ImageBlockRenderer()
                 )
             )
         )
+        // Bold
         findViewById<View>(R.id.btn_bold).setOnClickListener {
             editor.command(ToggleMark(Mark(type = MarkType.BOLD)))
         }
+        // Italic
         findViewById<View>(R.id.btn_italic).setOnClickListener {
             editor.command(ToggleMark(Mark(type = MarkType.ITALIC)))
         }
+        //
         findViewById<View>(R.id.btn_size).setOnClickListener {
             editor.getValue().startBlock()?.let { block ->
                 val type: BlockNode.Type
@@ -139,7 +148,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
         val insertLinkBtn: View = findViewById(R.id.btn_insert_link)
-        val insertPhotoBtn: View = findViewById(R.id.btn_insert_photo)
+
+        // Image
+        findViewById<View>(R.id.btn_insert_photo).setOnClickListener {
+            val url =
+                "https://lh6.googleusercontent.com/-y5Z-qlqw3I4/AAAAAAAAAAI/AAAAAAAAAzE/-Jvz1UN0rZ8/photo.jpg"
+            editor.command(InsertImageBlock(url))
+        }
 
         editor.updateValue(Value.Default)
     }
